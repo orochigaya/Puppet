@@ -1,31 +1,41 @@
-class ssh{
-
-# execute 'yum update'
-exec {'yum update':
-  command => '/usr/bin/yum update'
+class ssh::install {
+        package { "openssh-server":
+                name => $operatingsystem ? {
+                        /(Red Hat|CentOS|Fedora)/ => "openssh-server",
+                        Ubuntu => "openssh-server",
+                        default=> "openssh"
+                 },
+                 ensure => latest,
+        }
 }
 
-# install ssh-server package
-package {'openssh-server':
-  require => Exec['yum update'],
-  ensure => installed,
+class ssh::config {
+        file {"/etc/ssh/sshd_config":
+                        ensure => present,
+                        owner  => 'root',
+                        group  => 'root',
+                        mode   => '0600',
+                        source => "puppet:///modules/ssh/sshd_config",
+                        require=> Class["ssh::install"],
+                        notify => Class["ssh::service"],
+        }
 }
 
-# install ssh-client package
-package {'openssh-clients':
-  require => Exec['yum update'],
-  ensure => installed,
+class ssh::service {
+        service { "sshd":
+                        name => $operatingsystem ? {
+                           /(Red Hat|CentOS|Fedora)/ => "sshd",
+                           Ubuntu => "ssh",
+                           default=> "sshd"
+                        },
+                        ensure     => running,
+                        hasstatus  => true,
+                        hasrestart => true,
+                        enable     => true,
+                        require    => Class["ssh::config"],
+        }
 }
 
-# ensure ssh service is running
-service { 'sshd':
-  ensure => running,
-}
-
-file { 'sshd_config':                                # file resource name
-  path => '/etc/ssh/sshd_config',
-  ensure => file,
-  source => 'puppet:///modules/ssh/sshd_config',
-}
-
+class ssh {
+        include ssh::install, ssh::config, ssh::service
 }

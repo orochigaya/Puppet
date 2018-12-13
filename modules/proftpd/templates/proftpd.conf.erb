@@ -1,0 +1,33 @@
+# PROFTPD
+# DON'T MODIFY THIS FILE DIRECTLY - MANAGED BY PUPPET
+UseIPv6                         off
+IdentLookups                    off
+ServerName                      <%= @hostname %>
+ServerType                      standalone
+DeferWelcome                    off
+MultilineRFC2228                on
+DefaultServer                   on
+ShowSymlinks                    on
+TimeoutNoTransfer               600
+TimeoutStalled                  600
+TimeoutIdle                     1200
+ListOptions                     "-l"
+DenyFilter                      \*.*/
+
+<% if @proftpd_chroot == true %>
+ DefaultRoot ~
+<% end %>
+
+Port                            <%= @proftpd_port %>
+
+MaxInstances                    <%= @proftpd_maxinstances %>
+
+# Set the user and group that the server normally runs at.
+User                            nobody
+Group                           ftp
+
+Umask                           022  022
+AllowOverwrite                  on
+
+TransferLog /var/log/proftpd/xferlog
+SystemLog   /var/log/proftpd/proftpd.log
